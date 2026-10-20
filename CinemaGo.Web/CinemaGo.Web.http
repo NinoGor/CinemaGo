@@ -1,0 +1,6 @@
+@CinemaGo.Web_HostAddress = http://localhost:5117
+
+GET {{CinemaGo.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
