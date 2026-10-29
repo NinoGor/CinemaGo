@@ -1,17 +1,26 @@
-using System.ComponentModel.DataAnnotations;
 namespace CinemaGo.Domain.Models.DTOs
 {
-    public sealed class RegisterRequest
-    {
-        [Required, StringLength(60, MinimumLength = 3)] public string UserName { get; set; } = string.Empty;
-        [Required, EmailAddress, StringLength(256)] public string Email { get; set; } = string.Empty;
-        [Required, MinLength(8), StringLength(100)] public string Password { get; set; } = string.Empty;
-    }
-    public sealed class LoginRequest
-    {
-        [Required, EmailAddress] public string Email { get; set; } = string.Empty;
-        [Required] public string Password { get; set; } = string.Empty;
-    }
-    public sealed record AuthResponse(string AccessToken, DateTime ExpiresAtUtc, UserDto User);
-    public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
+    public record RegisterRequest(string UserName, string Email, string Password);
+
+    // ადმინის რეგისტრაციას დამატებით სჭირდება secret key 
+    public record RegisterAdminRequest(string UserName, string Email, string Password, string AdminSecret);
+
+    public record LoginRequest(string Email, string Password);
+
+    // "ჩვეულებრივი" მომხმარებლები რეგისტრაციისას არ მიიღებენ ტოკენს, ჯერ მეილის ვერიფიკაცია უნდა მოხდეს
+    public record RegisterResponse(int UserId, string Email, string Message);
+
+    public record ConfirmEmailRequest(int UserId, string Token);
+
+    public record ResendConfirmationRequest(string Email);
+
+    public record MessageResponse(string Message);
+
+    public record AuthResponse(
+        int UserId,
+        string UserName,
+        string Email,
+        IReadOnlyList<string> Roles,
+        string Token,
+        DateTime ExpiresAt);
 }

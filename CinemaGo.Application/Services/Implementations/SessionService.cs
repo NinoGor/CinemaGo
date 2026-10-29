@@ -1,37 +1,39 @@
+using System.Data;
+using CinemaGo.Application.Mappings;
 using CinemaGo.Application.Services.Interfaces;
 using CinemaGo.Domain.Exceptions;
 using CinemaGo.Domain.Interfaces;
-using CinemaGo.Domain.Interfaces.Repositories;
 using CinemaGo.Domain.Models.DTOs;
 using CinemaGo.Domain.Models.Entities;
 using CinemaGo.Domain.Models.Entities.Enums;
-using CinemaGo.Domain.Rules;
+using Microsoft.Extensions.Logging;
 
 namespace CinemaGo.Application.Services.Implementations
 {
-    public sealed class SessionService : EntityService<Session, SessionDto, SessionWriteDto>, ISessionService
+    public class SessionService : ISessionService
     {
         private readonly ISessionRepository _sessionRepository;
-        private readonly IRepository<Movie> _movieRepository;
-        private readonly IRepository<Hall> _hallRepository;
-        private readonly IRepository<Seat> _seatRepository;
-        private readonly IRepository<Booking> _bookingRepository;
+        private readonly IMovieRepository _movieRepository;
+        private readonly IHallRepository _hallRepository;
+        private readonly ISeatRepository _seatRepository;
+        private readonly IBookingRepository _bookingRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITransactionManager _transactions;
+        private readonly IClock _clock;
+        private readonly IEmailService _email;
+        private readonly ILogger<SessionService> _logger;
 
         public SessionService(
             ISessionRepository sessionRepository,
-            IRepository<Movie> movieRepository,
-            IRepository<Hall> hallRepository,
-            IRepository<Seat> seatRepository,
-            IRepository<Booking> bookingRepository,
-            IUnitOfWork unitOfWork)
-            : base(
-                sessionRepository,
-                unitOfWork,
-                e => new SessionDto(e.Id, e.MovieId, e.HallId, e.StartsAt, e.StandardPrice, e.VipPrice, e.Status),
-                d => new Session { MovieId = d.MovieId, HallId = d.HallId, StartsAt = AsUtc(d.StartsAt), StandardPrice = d.StandardPrice, VipPrice = d.VipPrice, Status = SessionStatus.Scheduled },
-                (e, d) => { e.MovieId = d.MovieId; e.HallId = d.HallId; e.StartsAt = AsUtc(d.StartsAt); e.StandardPrice = d.StandardPrice; e.VipPrice = d.VipPrice; }
-            )
+            IMovieRepository movieRepository,
+            IHallRepository hallRepository,
+            ISeatRepository seatRepository,
+            IBookingRepository bookingRepository,
+            IUnitOfWork unitOfWork,
+            ITransactionManager transactions,
+            IClock clock,
+            IEmailService email,
+            ILogger<SessionService> logger)
         {
             _sessionRepository = sessionRepository;
             _movieRepository = movieRepository;
@@ -39,72 +41,208 @@ namespace CinemaGo.Application.Services.Implementations
             _seatRepository = seatRepository;
             _bookingRepository = bookingRepository;
             _unitOfWork = unitOfWork;
+            _transactions = transactions;
+            _clock = clock;
+            _email = email;
+            _logger = logger;
         }
 
-        public async Task<PagedResult<SessionDto>> SearchAsync(int? movieId, DateTime? startsFrom, DateTime? startsTo, int page, int pageSize, CancellationToken ct = default)
+        public async Task<PagedResult<SessionResponse>> SearchAsync(SessionFilter filter, CancellationToken ct = default)
         {
-            page = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 1, 100);
+            DateTime? defaultFrom = filter.IncludePast ? null : _clock.UtcNow;
+            filter.From = filter.From?.AsUtc() ?? defaultFrom;
+            filter.To = filter.To?.AsUtc();
 
-            var rows = await _sessionRepository.GetFilteredAsync(movieId, startsFrom, startsTo, page, pageSize, ct);
-            var count = await _sessionRepository.CountFilteredAsync(movieId, startsFrom, startsTo, ct);
-
-            return new(rows.Select(Map).ToList(), page, pageSize, count);
+            var page = await _sessionRepository.SearchAsync(filter, ct);
+            return page.Map(s => s.ToResponse());
         }
 
-        public async Task<IReadOnlyList<SeatAvailabilityDto>?> GetSeatsAsync(int sessionId, CancellationToken ct = default)
+        public async Task<SessionResponse> GetByIdAsync(int id, CancellationToken ct = default)
+            => (await LoadAsync(id, ct)).ToResponse();
+
+        public async Task<SessionSeatsResponse> GetSeatsAsync(int sessionId, CancellationToken ct = default)
         {
-            var session = await _sessionRepository.GetByIdAsync(sessionId, ct);
-            if (session is null) return null;
+            var session = await LoadAsync(sessionId, ct);
+            var seats = await _seatRepository.GetByHallAsync(session.HallId, ct);
+            var bookedIds = (await _bookingRepository.GetBookedSeatIdsAsync(sessionId, ct)).ToHashSet();
 
-            var seats = (await _seatRepository.GetAllAsync(ct)).Where(s => s.HallId == session.HallId).OrderBy(s => s.RowNumber).ThenBy(s => s.SeatNumber).ToList();
-            var taken = (await _bookingRepository.GetAllAsync(ct)).Where(b => b.SessionId == sessionId && b.Status == BookingStatus.Active).Select(b => b.SeatId).ToHashSet();
+            var seatDtos = seats
+                .Select(seat => new SeatStatusResponse(
+                    seat.Id,
+                    seat.RowNumber,
+                    seat.SeatNumber,
+                    seat.IsVip,
+                    session.GetPriceFor(seat),
+                    bookedIds.Contains(seat.Id)))
+                .ToList();
 
-            return seats.Select(s => new SeatAvailabilityDto(s.Id, s.RowNumber, s.SeatNumber, s.IsVip, !taken.Contains(s.Id))).ToList();
+            return new SessionSeatsResponse(
+                session.Id,
+                seatDtos.Count,
+                seatDtos.Count(s => !s.IsBooked),
+                seatDtos);
         }
 
-        protected override async Task ValidateWriteAsync(SessionWriteDto dto, int? currentId, CancellationToken ct)
+        public async Task<SessionResponse> CreateAsync(SessionRequest request, CancellationToken ct = default)
         {
-            var movie = await _movieRepository.GetByIdAsync(dto.MovieId, ct);
-            if (movie is null) throw new BusinessException("Movie was not found.", 404);
+            var movie = await _movieRepository.GetByIdAsync(request.MovieId, ct)
+                        ?? throw new NotFoundException(nameof(Movie), request.MovieId);
+            var hall = await _hallRepository.GetByIdAsync(request.HallId, ct)
+                       ?? throw new NotFoundException(nameof(Hall), request.HallId);
 
-            if (await _hallRepository.GetByIdAsync(dto.HallId, ct) is null)
-                throw new BusinessException("Hall was not found.", 404);
+            var startsAt = request.StartsAt.AsUtc();
+            EnsureInFuture(startsAt);
 
-            if (AsUtc(dto.StartsAt) <= DateTime.UtcNow)
-                throw new BusinessException("A session must start in the future.", 400);
-
-            var all = await _sessionRepository.GetAllAsync(ct);
-
-            foreach (var other in all.Where(s => s.Id != currentId && s.HallId == dto.HallId && s.Status == SessionStatus.Scheduled))
+            var session = new MovieSession
             {
-                var otherMovie = await _movieRepository.GetByIdAsync(other.MovieId, ct);
-                if (otherMovie is null) continue;
+                Movie = movie,
+                Hall = hall,
+                StandardPrice = request.StandardPrice,
+                VipPrice = request.VipPrice,
+                Status = SessionStatus.Scheduled
+            };
+            session.ScheduleAt(startsAt, movie.DurationMinutes);
 
-                if (SessionRules.Overlaps(AsUtc(dto.StartsAt), movie.DurationMinutes, other.StartsAt, otherMovie.DurationMinutes))
-                    throw new BusinessException($"The hall schedule overlaps session {other.Id}.", 409);
-            }
+            /*  ბაზა ბლოკავს დარბაზის შესაბამის დროის ინტერვალს,
+                რომ სხვა პარალელურმა ტრანზაქციამ ვერც წაიკითხოს და ვერც ჩაწეროს
+                (სანამ ეს პროცესი არ დასრულდება) */
+            return await InSerializableTransactionAsync(async () =>
+            {
+                await EnsureNoOverlapAsync(hall.Id, session.StartsAt, session.EndsAt, null, ct);
+
+                await _sessionRepository.AddAsync(session, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                _logger.LogInformation("Session {SessionId} created for movie {MovieId} in hall {HallId} at {StartsAt:u}.",
+                    session.Id, movie.Id, hall.Id, session.StartsAt);
+                return session.ToResponse();
+            }, ct);
         }
 
-        public override async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
+        public async Task<SessionResponse> UpdateAsync(int id, SessionRequest request, CancellationToken ct = default)
         {
-            var session = await _sessionRepository.GetByIdAsync(id, ct);
-            if (session is null) return false;
+            var session = await LoadAsync(id, ct);
 
-            session.Status = SessionStatus.Cancelled;
-            _sessionRepository.Update(session);
+            if (session.IsCancelled)
+                throw new ConflictException("A cancelled session cannot be modified.");
 
-            foreach (var booking in (await _bookingRepository.GetAllAsync(ct)).Where(b => b.SessionId == id && b.Status == BookingStatus.Active))
+            var now = _clock.UtcNow;
+            if (session.HasStarted(now))
+                throw new BusinessRuleException("A session that has already started cannot be modified.");
+
+            var movieChanged = request.MovieId != session.MovieId;
+            var hallChanged = request.HallId != session.HallId;
+
+            if ((movieChanged || hallChanged) && await _bookingRepository.HasActiveBookingsAsync(id, ct))
+                throw new ConflictException("The movie or hall cannot be changed while the session has active bookings.");
+
+            var movie = movieChanged
+                ? await _movieRepository.GetByIdAsync(request.MovieId, ct) ?? throw new NotFoundException(nameof(Movie), request.MovieId)
+                : session.Movie;
+            var hall = hallChanged
+                ? await _hallRepository.GetByIdAsync(request.HallId, ct) ?? throw new NotFoundException(nameof(Hall), request.HallId)
+                : session.Hall;
+
+            var startsAt = request.StartsAt.AsUtc();
+            EnsureInFuture(startsAt);
+
+            return await InSerializableTransactionAsync(async () =>
             {
-                booking.Status = BookingStatus.Cancelled;
-                _bookingRepository.Update(booking);
-            }
+                var endsAt = startsAt.AddMinutes(movie.DurationMinutes);
+                await EnsureNoOverlapAsync(hall.Id, startsAt, endsAt, session.Id, ct);
 
+                session.Movie = movie;
+                session.MovieId = movie.Id;
+                session.Hall = hall;
+                session.HallId = hall.Id;
+                session.ScheduleAt(startsAt, movie.DurationMinutes);
+                session.StandardPrice = request.StandardPrice;
+                session.VipPrice = request.VipPrice;
+
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                _logger.LogInformation("Session {SessionId} updated.", session.Id);
+                return session.ToResponse();
+            }, ct);
+        }
+
+        public async Task<SessionCancellationResponse> CancelAsync(int id, CancellationToken ct = default)
+        {
+            var session = await LoadAsync(id, ct);
+            var now = _clock.UtcNow;
+
+            if (session.HasStarted(now) && !session.IsCancelled)
+                throw new BusinessRuleException("A session that has already started cannot be cancelled.");
+
+            session.Cancel(); // გაისვრის ConflictException-ს თუ უკვე გაუქმებულია
+
+            var bookings = await _bookingRepository.GetActiveBySessionAsync(id, ct);
+            foreach (var booking in bookings)
+                booking.Cancel(now);
+
+            // ერთი ტრანზაქციაა - სესია და მისი ჯავშნები ერთად გაუქმდება
             await _unitOfWork.SaveChangesAsync(ct);
-            return true;
+
+            _logger.LogInformation("Session {SessionId} cancelled together with {Count} booking(s).", id, bookings.Count);
+
+            await NotifyCustomersAsync(session, bookings, ct);
+            return new SessionCancellationResponse(id, bookings.Count);
         }
 
-        private static DateTime AsUtc(DateTime value) => value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
-        private static SessionDto Map(Session e) => new(e.Id, e.MovieId, e.HallId, e.StartsAt, e.StandardPrice, e.VipPrice, e.Status);
+        // ------------------------------------------------------------------ helpers
+        private async Task<MovieSession> LoadAsync(int id, CancellationToken ct)
+            => await _sessionRepository.GetWithDetailsAsync(id, ct)
+               ?? throw new NotFoundException(nameof(MovieSession), id);
+
+        private void EnsureInFuture(DateTime startsAtUtc)
+        {
+            if (startsAtUtc <= _clock.UtcNow)
+                throw new BusinessRuleException("A session must start in the future.");
+        }
+
+        private async Task EnsureNoOverlapAsync(int hallId, DateTime start, DateTime end, int? excludeId, CancellationToken ct)
+        {
+            if (await _sessionRepository.HasOverlapAsync(hallId, start, end, excludeId, ct))
+                throw new ConflictException("The hall already has a session that overlaps with this time range.");
+        }
+
+        private async Task<T> InSerializableTransactionAsync<T>(Func<Task<T>> work, CancellationToken ct)
+        {
+            await _transactions.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            try
+            {
+                var result = await work();
+                await _transactions.CommitTransactionAsync(ct);
+                return result;
+            }
+            catch
+            {
+                await _transactions.RollbackTransactionAsync(CancellationToken.None);
+                throw;
+            }
+        }
+
+        private async Task NotifyCustomersAsync(MovieSession session, IEnumerable<Booking> bookings, CancellationToken ct)
+        {
+            foreach (var booking in bookings)
+            {
+                if (string.IsNullOrWhiteSpace(booking.User?.Email)) continue;
+
+                try
+                {
+                    await _email.SendAsync(
+                        booking.User!.Email!,
+                        "Your CinemaGo session was cancelled",
+                        $"Hello {booking.User.UserName}, the session of '{session.Movie.Title}' on {session.StartsAt:yyyy-MM-dd HH:mm} UTC " +
+                        $"was cancelled. Your booking for row {booking.Seat.RowNumber}, seat {booking.Seat.SeatNumber} " +
+                        $"(ticket {booking.Ticket?.TicketCode}) is cancelled as well.",
+                        ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not send cancellation e-mail for booking {BookingId}.", booking.Id);
+                }
+            }
+        }
     }
 }

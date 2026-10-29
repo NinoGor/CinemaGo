@@ -1,18 +1,60 @@
-using CinemaGo.Domain.Interfaces.Repositories;
-using CinemaGo.Domain.Models.Entities; 
-using CinemaGo.Infrastructure.Data; 
+using CinemaGo.Domain.Interfaces;
+using CinemaGo.Domain.Models.DTOs;
+using CinemaGo.Domain.Models.Entities;
+using CinemaGo.Domain.Models.Entities.Enums;
+using CinemaGo.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace CinemaGo.Infrastructure.Repositories
 {
-    public sealed class SessionRepository : Repository<Session>, ISessionRepository
+    public class SessionRepository : Repository<MovieSession>, ISessionRepository
     {
-        public SessionRepository(CinemaGoDbContext context) : base(context)
+        public SessionRepository(CinemaGoDbContext context) : base(context) { }
+
+        public Task<MovieSession?> GetWithDetailsAsync(int id, CancellationToken ct = default)
+            => DbSet
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .FirstOrDefaultAsync(s => s.Id == id, ct);
+
+        public async Task<PagedResult<MovieSession>> SearchAsync(SessionFilter filter, CancellationToken ct = default)
         {
+            var query = DbSet
+                .AsNoTracking()
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .AsQueryable();
+
+            if (!filter.IncludeCancelled)
+                query = query.Where(s => s.Status == SessionStatus.Scheduled);
+
+            if (filter.MovieId.HasValue)
+                query = query.Where(s => s.MovieId == filter.MovieId.Value);
+
+            if (filter.HallId.HasValue)
+                query = query.Where(s => s.HallId == filter.HallId.Value);
+
+            if (filter.GenreId.HasValue)
+                query = query.Where(s => s.Movie.MovieGenres.Any(mg => mg.GenreId == filter.GenreId.Value));
+
+            if (filter.From.HasValue)
+                query = query.Where(s => s.StartsAt >= filter.From.Value);
+
+            if (filter.To.HasValue)
+                query = query.Where(s => s.StartsAt <= filter.To.Value);
+
+            query = query.OrderBy(s => s.StartsAt).ThenBy(s => s.Id);
+
+            return await query.ToPagedResultAsync(filter, ct);
         }
 
-        private IQueryable<Session> Filter(int? movieId,DateTime? from,DateTime? to) { var q=Context.Sessions.AsQueryable(); if(movieId.HasValue)q=q.Where(x=>x.MovieId==movieId.Value); if(from.HasValue)q=q.Where(x=>x.StartsAt>=from.Value); if(to.HasValue)q=q.Where(x=>x.StartsAt<=to.Value); return q; }
-        public async Task<IReadOnlyList<Session>> GetFilteredAsync(int? movieId,DateTime? from,DateTime? to,int page,int pageSize,CancellationToken ct=default)=>await Filter(movieId,from,to).OrderBy(x=>x.StartsAt).Skip((page-1)*pageSize).Take(pageSize).AsNoTracking().ToListAsync(ct);
-        public Task<int> CountFilteredAsync(int? movieId,DateTime? from,DateTime? to,CancellationToken ct=default)=>Filter(movieId,from,to).CountAsync(ct);
+        public Task<bool> HasOverlapAsync(
+            int hallId, DateTime start, DateTime end, int? excludeSessionId, CancellationToken ct = default)
+            => DbSet.AnyAsync(s =>
+                s.HallId == hallId &&
+                s.Status == SessionStatus.Scheduled &&
+                (excludeSessionId == null || s.Id != excludeSessionId) &&
+                s.StartsAt < end &&
+                s.EndsAt > start, ct);
     }
 }

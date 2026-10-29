@@ -1,13 +1,33 @@
-using System.ComponentModel.DataAnnotations;
 namespace CinemaGo.Domain.Models.DTOs
 {
-    public sealed record MovieDto(int Id, string Title, string? Description, int DurationMinutes, string AgeRating, IReadOnlyList<int> GenreIds, IReadOnlyList<string> Genres);
-    public sealed class MovieWriteDto
+    public record GenreResponse(int Id, string Name);
+
+    public record HallResponse(int Id, string Name, int SeatCount);
+
+    public record MovieRequest(
+        string Title,
+        string? Description,
+        int DurationMinutes,
+        int AgeRating,
+        List<int> GenreIds);
+
+    public record MovieResponse(
+        int Id,
+        string Title,
+        string? Description,
+        int DurationMinutes,
+        int AgeRating,
+        IReadOnlyList<GenreResponse> Genres);
+
+    public class MovieFilter : PaginationParams
     {
-        [Required, StringLength(160, MinimumLength = 1)] public string Title { get; set; } = string.Empty;
-        [StringLength(2000)] public string? Description { get; set; }
-        [Range(1, 600)] public int DurationMinutes { get; set; }
-        [Required, StringLength(20)] public string AgeRating { get; set; } = "PG";
-        public List<int> GenreIds { get; set; } = new();
+        public string? Title { get; set; }
+        public int? GenreId { get; set; }
+        public int? MaxAgeRating { get; set; }
+
+        // "title" იქნება "გაჩუმებით" ან "duration"
+        public string? SortBy { get; set; }
+        public bool Descending { get; set; }
     }
+
 }
