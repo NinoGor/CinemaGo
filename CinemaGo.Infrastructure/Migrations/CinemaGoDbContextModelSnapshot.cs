@@ -17,10 +17,127 @@ namespace CinemaGo.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.ApplicationRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("Roles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ConcurrencyStamp = "5f1c7b52-0f5e-4b8e-9a3a-1d3a4c9b0001",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ConcurrencyStamp = "5f1c7b52-0f5e-4b8e-9a3a-1d3a4c9b0002",
+                            Name = "Customer",
+                            NormalizedName = "CUSTOMER"
+                        });
+                });
+
+            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.ApplicationUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("Users", (string)null);
+                });
 
             modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Booking", b =>
                 {
@@ -29,6 +146,9 @@ namespace CinemaGo.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -49,13 +169,14 @@ namespace CinemaGo.Infrastructure.Migrations
 
                     b.HasIndex("SeatId");
 
+                    b.HasIndex("UserId");
+
                     b.HasIndex("SessionId", "SeatId")
                         .IsUnique()
+                        .HasDatabaseName("UX_Bookings_Session_Seat_Active")
                         .HasFilter("[Status] = 0");
 
-                    b.HasIndex("UserId", "CreatedAt");
-
-                    b.ToTable("Bookings");
+                    b.ToTable("Bookings", (string)null);
                 });
 
             modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Genre", b =>
@@ -68,15 +189,15 @@ namespace CinemaGo.Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Genres");
+                    b.ToTable("Genres", (string)null);
 
                     b.HasData(
                         new
@@ -87,17 +208,27 @@ namespace CinemaGo.Infrastructure.Migrations
                         new
                         {
                             Id = 2,
-                            Name = "Drama"
+                            Name = "Sci-Fi"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Comedy"
+                            Name = "Drama"
                         },
                         new
                         {
                             Id = 4,
+                            Name = "Comedy"
+                        },
+                        new
+                        {
+                            Id = 5,
                             Name = "Animation"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Thriller"
                         });
                 });
 
@@ -119,18 +250,18 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Halls");
+                    b.ToTable("Halls", (string)null);
 
                     b.HasData(
                         new
                         {
                             Id = 1,
-                            Name = "Main Hall"
+                            Name = "Hall A"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "VIP Hall"
+                            Name = "Hall B"
                         });
                 });
 
@@ -142,10 +273,8 @@ namespace CinemaGo.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AgeRating")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<int>("AgeRating")
+                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
@@ -156,16 +285,52 @@ namespace CinemaGo.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("nvarchar(160)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Title");
 
-                    b.ToTable("Movies", t =>
+                    b.ToTable("Movies", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Movies_DurationMinutes_Positive", "[DurationMinutes] > 0");
+                            t.HasCheckConstraint("CK_Movies_AgeRating", "[AgeRating] >= 0");
+
+                            t.HasCheckConstraint("CK_Movies_Duration", "[DurationMinutes] > 0");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AgeRating = 13,
+                            Description = "A thief who steals secrets through dreams gets one last job.",
+                            DurationMinutes = 148,
+                            Title = "Inception"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AgeRating = 13,
+                            Description = "Batman faces the Joker in Gotham City.",
+                            DurationMinutes = 152,
+                            Title = "The Dark Knight"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            AgeRating = 0,
+                            Description = "A girl wanders into a world ruled by spirits.",
+                            DurationMinutes = 125,
+                            Title = "Spirited Away"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            AgeRating = 12,
+                            Description = "Explorers travel through a wormhole to save humanity.",
+                            DurationMinutes = 169,
+                            Title = "Interstellar"
                         });
                 });
 
@@ -177,14 +342,91 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.Property<int>("GenreId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
                     b.HasKey("MovieId", "GenreId");
 
                     b.HasIndex("GenreId");
 
-                    b.ToTable("MovieGenres");
+                    b.ToTable("MovieGenres", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            MovieId = 1,
+                            GenreId = 1
+                        },
+                        new
+                        {
+                            MovieId = 1,
+                            GenreId = 2
+                        },
+                        new
+                        {
+                            MovieId = 2,
+                            GenreId = 1
+                        },
+                        new
+                        {
+                            MovieId = 2,
+                            GenreId = 6
+                        },
+                        new
+                        {
+                            MovieId = 3,
+                            GenreId = 5
+                        },
+                        new
+                        {
+                            MovieId = 4,
+                            GenreId = 2
+                        },
+                        new
+                        {
+                            MovieId = 4,
+                            GenreId = 3
+                        });
+                });
+
+            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.MovieSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndsAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("HallId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MovieId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("StandardPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("VipPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HallId", "StartsAt");
+
+                    b.HasIndex("MovieId", "StartsAt");
+
+                    b.ToTable("Sessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Sessions_EndsAfterStart", "[EndsAt] > [StartsAt]");
+
+                            t.HasCheckConstraint("CK_Sessions_Prices", "[StandardPrice] >= 0 AND [VipPrice] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Seat", b =>
@@ -212,11 +454,11 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.HasIndex("HallId", "RowNumber", "SeatNumber")
                         .IsUnique();
 
-                    b.ToTable("Seats", t =>
+                    b.ToTable("Seats", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Seats_Number_Positive", "[SeatNumber] > 0");
+                            t.HasCheckConstraint("CK_Seats_RowNumber", "[RowNumber] > 0");
 
-                            t.HasCheckConstraint("CK_Seats_Row_Positive", "[RowNumber] > 0");
+                            t.HasCheckConstraint("CK_Seats_SeatNumber", "[SeatNumber] > 0");
                         });
 
                     b.HasData(
@@ -240,67 +482,497 @@ namespace CinemaGo.Infrastructure.Migrations
                         {
                             Id = 3,
                             HallId = 1,
-                            IsVip = true,
+                            IsVip = false,
                             RowNumber = 1,
                             SeatNumber = 3
                         },
                         new
                         {
                             Id = 4,
-                            HallId = 2,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 5,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 6,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 6
+                        },
+                        new
+                        {
+                            Id = 7,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 7
+                        },
+                        new
+                        {
+                            Id = 8,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 8
+                        },
+                        new
+                        {
+                            Id = 9,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 1
+                        },
+                        new
+                        {
+                            Id = 10,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 2
+                        },
+                        new
+                        {
+                            Id = 11,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 3
+                        },
+                        new
+                        {
+                            Id = 12,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 13,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 14,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 6
+                        },
+                        new
+                        {
+                            Id = 15,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 7
+                        },
+                        new
+                        {
+                            Id = 16,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 8
+                        },
+                        new
+                        {
+                            Id = 17,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 1
+                        },
+                        new
+                        {
+                            Id = 18,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 2
+                        },
+                        new
+                        {
+                            Id = 19,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 3
+                        },
+                        new
+                        {
+                            Id = 20,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 21,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 22,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 6
+                        },
+                        new
+                        {
+                            Id = 23,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 7
+                        },
+                        new
+                        {
+                            Id = 24,
+                            HallId = 1,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 8
+                        },
+                        new
+                        {
+                            Id = 25,
+                            HallId = 1,
                             IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 1
+                        },
+                        new
+                        {
+                            Id = 26,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 2
+                        },
+                        new
+                        {
+                            Id = 27,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 3
+                        },
+                        new
+                        {
+                            Id = 28,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 29,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 30,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 6
+                        },
+                        new
+                        {
+                            Id = 31,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 7
+                        },
+                        new
+                        {
+                            Id = 32,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 8
+                        },
+                        new
+                        {
+                            Id = 33,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 5,
+                            SeatNumber = 1
+                        },
+                        new
+                        {
+                            Id = 34,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 5,
+                            SeatNumber = 2
+                        },
+                        new
+                        {
+                            Id = 35,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 5,
+                            SeatNumber = 3
+                        },
+                        new
+                        {
+                            Id = 36,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 5,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 37,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 5,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 38,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 5,
+                            SeatNumber = 6
+                        },
+                        new
+                        {
+                            Id = 39,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 5,
+                            SeatNumber = 7
+                        },
+                        new
+                        {
+                            Id = 40,
+                            HallId = 1,
+                            IsVip = true,
+                            RowNumber = 5,
+                            SeatNumber = 8
+                        },
+                        new
+                        {
+                            Id = 41,
+                            HallId = 2,
+                            IsVip = false,
                             RowNumber = 1,
                             SeatNumber = 1
                         },
                         new
                         {
-                            Id = 5,
+                            Id = 42,
                             HallId = 2,
-                            IsVip = true,
+                            IsVip = false,
                             RowNumber = 1,
                             SeatNumber = 2
-                        });
-                });
-
-            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Session", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("HallId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MovieId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("StandardPrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<DateTime>("StartsAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("VipPrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MovieId");
-
-                    b.HasIndex("HallId", "StartsAt");
-
-                    b.ToTable("Sessions", t =>
+                        },
+                        new
                         {
-                            t.HasCheckConstraint("CK_Sessions_StandardPrice_NonNegative", "[StandardPrice] >= 0");
-
-                            t.HasCheckConstraint("CK_Sessions_VipPrice_NonNegative", "[VipPrice] >= 0");
+                            Id = 43,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 3
+                        },
+                        new
+                        {
+                            Id = 44,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 45,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 46,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 1,
+                            SeatNumber = 6
+                        },
+                        new
+                        {
+                            Id = 47,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 1
+                        },
+                        new
+                        {
+                            Id = 48,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 2
+                        },
+                        new
+                        {
+                            Id = 49,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 3
+                        },
+                        new
+                        {
+                            Id = 50,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 51,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 52,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 2,
+                            SeatNumber = 6
+                        },
+                        new
+                        {
+                            Id = 53,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 1
+                        },
+                        new
+                        {
+                            Id = 54,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 2
+                        },
+                        new
+                        {
+                            Id = 55,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 3
+                        },
+                        new
+                        {
+                            Id = 56,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 57,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 58,
+                            HallId = 2,
+                            IsVip = false,
+                            RowNumber = 3,
+                            SeatNumber = 6
+                        },
+                        new
+                        {
+                            Id = 59,
+                            HallId = 2,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 1
+                        },
+                        new
+                        {
+                            Id = 60,
+                            HallId = 2,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 2
+                        },
+                        new
+                        {
+                            Id = 61,
+                            HallId = 2,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 3
+                        },
+                        new
+                        {
+                            Id = 62,
+                            HallId = 2,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 4
+                        },
+                        new
+                        {
+                            Id = 63,
+                            HallId = 2,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 5
+                        },
+                        new
+                        {
+                            Id = 64,
+                            HallId = 2,
+                            IsVip = true,
+                            RowNumber = 4,
+                            SeatNumber = 6
                         });
                 });
 
@@ -315,17 +987,13 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.Property<int>("BookingId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<decimal>("FinalPrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("TicketCode")
                         .IsRequired()
-                        .HasMaxLength(35)
-                        .HasColumnType("nvarchar(35)");
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.HasKey("Id");
 
@@ -335,13 +1003,13 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.HasIndex("TicketCode")
                         .IsUnique();
 
-                    b.ToTable("Tickets", t =>
+                    b.ToTable("Tickets", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Tickets_FinalPrice_NonNegative", "[FinalPrice] >= 0");
+                            t.HasCheckConstraint("CK_Tickets_FinalPrice", "[FinalPrice] >= 0");
                         });
                 });
 
-            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.User", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -349,32 +1017,99 @@ namespace CinemaGo.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
+                    b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UserRole")
+                    b.Property<int>("RoleId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
+                    b.HasIndex("RoleId");
 
-                    b.HasIndex("UserName")
-                        .IsUnique();
+                    b.ToTable("RoleClaims", (string)null);
+                });
 
-                    b.ToTable("Users");
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("UserTokens", (string)null);
                 });
 
             modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Booking", b =>
@@ -385,13 +1120,13 @@ namespace CinemaGo.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("CinemaGo.Domain.Models.Entities.Session", "Session")
+                    b.HasOne("CinemaGo.Domain.Models.Entities.MovieSession", "Session")
                         .WithMany("Bookings")
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("CinemaGo.Domain.Models.Entities.User", "User")
+                    b.HasOne("CinemaGo.Domain.Models.Entities.ApplicationUser", "User")
                         .WithMany("Bookings")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -409,7 +1144,7 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.HasOne("CinemaGo.Domain.Models.Entities.Genre", "Genre")
                         .WithMany("MovieGenres")
                         .HasForeignKey("GenreId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("CinemaGo.Domain.Models.Entities.Movie", "Movie")
@@ -419,6 +1154,25 @@ namespace CinemaGo.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Genre");
+
+                    b.Navigation("Movie");
+                });
+
+            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.MovieSession", b =>
+                {
+                    b.HasOne("CinemaGo.Domain.Models.Entities.Hall", "Hall")
+                        .WithMany("Sessions")
+                        .HasForeignKey("HallId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CinemaGo.Domain.Models.Entities.Movie", "Movie")
+                        .WithMany("Sessions")
+                        .HasForeignKey("MovieId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Hall");
 
                     b.Navigation("Movie");
                 });
@@ -434,34 +1188,71 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.Navigation("Hall");
                 });
 
-            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Session", b =>
-                {
-                    b.HasOne("CinemaGo.Domain.Models.Entities.Hall", "Hall")
-                        .WithMany("Sessions")
-                        .HasForeignKey("HallId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("CinemaGo.Domain.Models.Entities.Movie", "Movie")
-                        .WithMany("Sessions")
-                        .HasForeignKey("MovieId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Hall");
-
-                    b.Navigation("Movie");
-                });
-
             modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Ticket", b =>
                 {
                     b.HasOne("CinemaGo.Domain.Models.Entities.Booking", "Booking")
                         .WithOne("Ticket")
                         .HasForeignKey("CinemaGo.Domain.Models.Entities.Ticket", "BookingId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Booking");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
+                {
+                    b.HasOne("CinemaGo.Domain.Models.Entities.ApplicationRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
+                {
+                    b.HasOne("CinemaGo.Domain.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
+                {
+                    b.HasOne("CinemaGo.Domain.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
+                {
+                    b.HasOne("CinemaGo.Domain.Models.Entities.ApplicationRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CinemaGo.Domain.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
+                {
+                    b.HasOne("CinemaGo.Domain.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.ApplicationUser", b =>
+                {
+                    b.Navigation("Bookings");
                 });
 
             modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Booking", b =>
@@ -488,17 +1279,12 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.Navigation("Sessions");
                 });
 
+            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.MovieSession", b =>
+                {
+                    b.Navigation("Bookings");
+                });
+
             modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Seat", b =>
-                {
-                    b.Navigation("Bookings");
-                });
-
-            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Session", b =>
-                {
-                    b.Navigation("Bookings");
-                });
-
-            modelBuilder.Entity("CinemaGo.Domain.Models.Entities.User", b =>
                 {
                     b.Navigation("Bookings");
                 });

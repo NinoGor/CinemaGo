@@ -153,17 +153,48 @@ namespace CinemaGo.Application.Services.Implementations
                 var link = $"{_emailSettings.PublicBaseUrl.TrimEnd('/')}/api/auth/confirm-email" +
                            $"?userId={user.Id}&token={Uri.EscapeDataString(token)}";
 
-                var body =
-                    $"<p>Hello {WebUtility.HtmlEncode(user.UserName)},</p>" +
-                    "<p>Welcome to CinemaGo! Please confirm your email address to activate your account:</p>" +
-                    $"<p><a href=\"{WebUtility.HtmlEncode(link)}\">Confirm my email</a></p>" +
-                    "<p>If you did not create this account, you can ignore this message.</p>";
+                // Notice the '$$' at the start: single {} are CSS, double {{}} are C# variables
+                var body = $$"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
+                    .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+                    .header { background: #e50914; color: #ffffff; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; }
+                    .content { padding: 30px; color: #333333; line-height: 1.6; }
+                    .btn { display: inline-block; background: #e50914; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; margin: 20px 0; }
+                    .footer { background: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #777777; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">CinemaGo</div>
+                    <div class="content">
+                        <p>Hello <strong>{{WebUtility.HtmlEncode(user.UserName)}}</strong>,</p>
+                        <p>Welcome to CinemaGo! We're thrilled to have you. Please confirm your email address to activate your account and start booking movies:</p>
+                        <p style="text-align: center;">
+                            <a href="{{WebUtility.HtmlEncode(link)}}" class="btn">Confirm My Email</a>
+                        </p>
+                        <p>If the button above doesn't work, copy and paste this link into your web browser:</p>
+                        <p style="word-break: break-all; font-size: 13px; color: #555;">{{WebUtility.HtmlEncode(link)}}</p>
+                        <p>If you did not create this account, you can safely ignore this message.</p>
+                    </div>
+                    <div class="footer">
+                        &copy; {{DateTime.UtcNow.Year}} CinemaGo. All rights reserved.
+                    </div>
+                </div>
+            </body>
+            </html>
+            """;
 
                 await _email.SendAsync(user.Email!, "Confirm your CinemaGo email", body, ct);
 
-                // SMTP-ს გარეშე მხოლოდ კონსოლში გამოჩნდება ლინკი
                 if (string.Equals(_emailSettings.Provider, "Simulated", StringComparison.OrdinalIgnoreCase))
+                {
                     _logger.LogInformation("[DEV] Email confirmation link for {Email}: {Link}", user.Email, link);
+                }
 
                 return true;
             }

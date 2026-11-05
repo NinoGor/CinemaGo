@@ -1,45 +1,134 @@
-
+using CinemaGo.Application.Settings;
+using CinemaGo.Application.Validators;
+using CinemaGo.Domain.Models.Entities;
 using CinemaGo.Infrastructure.Data;
+using CinemaGo.Web.Extensions;
+using CinemaGo.Web.Filters;
+using CinemaGo.Web.Middleware;
+using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using System.Text;
+using System.Text.Json.Serialization;
 
-namespace CinemaGo.Web
-{
-    public class Program
+var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
+
+// git-ignored ფაილი სადაცაა settings/secrets
+configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
+// ---------------------------------------------------------------- Database (SQL Server + EF Core)
+builder.Services.AddDbContext<CinemaGoDbContext>(options =>
+    options.UseSqlServer(
+        configuration.GetConnectionString("DefaultConnection"),
+        sql => sql.MigrationsAssembly(typeof(CinemaGoDbContext).Assembly.GetName().Name)));
+
+// ---------------------------------------------------------------- Identity (users + roles)
+builder.Services
+    .AddIdentityCore<ApplicationUser>(options =>
     {
-        public static void Main(string[] args)
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = false;
+    })
+    .AddRoles<ApplicationRole>()
+    .AddEntityFrameworkStores<CinemaGoDbContext>()
+    .AddDefaultTokenProviders(); // needed to generate / validate e-mail confirmation tokens
+
+// ---------------------------------------------------------------- Configuration / options
+builder.Services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+builder.Services.Configure<AdminRegistrationSettings>(configuration.GetSection(AdminRegistrationSettings.SectionName));
+builder.Services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+builder.Services.AddDataProtection(); // protects the confirmation tokens
+
+var jwt = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+          ?? throw new InvalidOperationException("The 'Jwt' configuration section is missing.");
+if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.StartsWith("[ENTER") || jwt.Key.Length < 32)
+    throw new InvalidOperationException(
+        "Jwt:Key is missing or still the placeholder. Copy appsettings.Local.example.json to appsettings.Local.json " +
+        "(next to appsettings.json) and set Jwt:Key to a string of at least 32 characters.");
+
+// ---------------------------------------------------------------- JWT authentication + authorization
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false; // keep the claim types exactly as written by JwtTokenGenerator
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            var builder = WebApplication.CreateBuilder(args);
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwt.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            NameClaimType = AppClaimTypes.UserName,
+            RoleClaimType = AppClaimTypes.Role
+        };
+    });
+builder.Services.AddAuthorization();
 
-            // Add services to the container.
+// ---------------------------------------------------------------- Validation, MVC, errors
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
-            builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+builder.Services
+    .AddControllers(options => options.Filters.Add<ValidationFilter>())
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-            builder.Services.AddDbContext<CinemaGoDbContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection")
-                ));
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
-            // TODO: AddScoped, swagger, identity
-            // TODO: AutoMapper
+// ---------------------------------------------------------------- Dependency injection (AddScoped...)
+builder.Services.AddCinemaGoServices(configuration);
 
-            var app = builder.Build();
+// ---------------------------------------------------------------- Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CinemaGo API", Version = "v1" });
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.MapOpenApi();
-            }
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste the JWT returned by /api/auth/login (Swagger adds the 'Bearer ' prefix)."
+    });
+    c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+    });
+});
 
-            app.UseHttpsRedirection();
+var app = builder.Build();
 
-            app.UseAuthorization();
+// ---------------------------------------------------------------- Pipeline
+app.UseExceptionHandler();   // -> GlobalExceptionHandler -> ProblemDetails
+app.UseStatusCodePages();    // 401 / 403 / 404 without a body also become ProblemDetails
 
-
-            app.MapControllers();
-
-            app.Run();
-        }
-    }
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+
+app.UseStaticFiles();
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
