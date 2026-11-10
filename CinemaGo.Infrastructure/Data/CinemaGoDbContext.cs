@@ -259,5 +259,104 @@ public class CinemaGoDbContext : IdentityDbContext<ApplicationUser, ApplicationR
         AddSeats(hallId: 1, rows: 5, seatsPerRow: 8, firstVipRow: 4);
         AddSeats(hallId: 2, rows: 4, seatsPerRow: 6, firstVipRow: 4);
         b.Entity<Seat>().HasData(seats);
+
+        var today = DateTime.UtcNow.Date;
+
+        b.Entity<MovieSession>().HasData(
+        // --- Today's Sessions ---
+        new MovieSession
+        {
+            Id = 1,
+            MovieId = 1, // Inception
+            HallId = 1,  // Hall A
+            StartsAt = today.AddHours(14), // 14:00
+            EndsAt = today.AddHours(16.5), // 16:28 (148 mins)
+            StandardPrice = 15.00m,
+            VipPrice = 25.00m,
+            Status = 0 // Active/Scheduled
+        },
+        new MovieSession
+        {
+            Id = 2,
+            MovieId = 2, // The Dark Knight
+            HallId = 2,  // Hall B
+            StartsAt = today.AddHours(17), // 17:00
+            EndsAt = today.AddHours(19.6), // 19:32 (152 mins)
+            StandardPrice = 18.00m,
+            VipPrice = 30.00m,
+            Status = 0
+        },
+        new MovieSession
+        {
+            Id = 3,
+            MovieId = 4, // Interstellar
+            HallId = 1,  // Hall A
+            StartsAt = today.AddHours(20), // 20:00
+            EndsAt = today.AddHours(22.85),// 22:49 (169 mins)
+            StandardPrice = 20.00m,
+            VipPrice = 35.00m,
+            Status = 0
+        },
+
+        // --- Tomorrow's Sessions ---
+        new MovieSession
+        {
+            Id = 4,
+            MovieId = 3, // Spirited Away
+            HallId = 2,  // Hall B
+            StartsAt = today.AddDays(1).AddHours(12), // Tomorrow at 12:00
+            EndsAt = today.AddDays(1).AddHours(14.1), // 14:05 (125 mins)
+            StandardPrice = 12.00m,
+            VipPrice = 20.00m,
+            Status = 0
+        },
+        new MovieSession
+        {
+            Id = 5,
+            MovieId = 1, // Inception
+            HallId = 2,  // Hall B
+            StartsAt = today.AddDays(1).AddHours(15), // Tomorrow at 15:00
+            EndsAt = today.AddDays(1).AddHours(17.5), // 17:28
+            StandardPrice = 15.00m,
+            VipPrice = 25.00m,
+            Status = 0
+        },
+        new MovieSession
+        {
+            Id = 6,
+            MovieId = 2, // The Dark Knight
+            HallId = 1,  // Hall A
+            StartsAt = today.AddDays(1).AddHours(18), // Tomorrow at 18:00
+            EndsAt = today.AddDays(1).AddHours(20.6), // 20:32
+            StandardPrice = 18.00m,
+            VipPrice = 30.00m,
+            Status = 0
+        },
+
+        // --- Day After Tomorrow's Sessions ---
+        new MovieSession
+        {
+            Id = 7,
+            MovieId = 4, // Interstellar
+            HallId = 1,  // Hall A
+            StartsAt = today.AddDays(2).AddHours(16), // In 2 days at 16:00
+            EndsAt = today.AddDays(2).AddHours(18.85), // 18:49
+            StandardPrice = 20.00m,
+            VipPrice = 35.00m,
+            Status = 0
+        },
+        new MovieSession
+        {
+            Id = 8,
+            MovieId = 3, // Spirited Away
+            HallId = 2,  // Hall B
+            StartsAt = today.AddDays(2).AddHours(19), // In 2 days at 19:00
+            EndsAt = today.AddDays(2).AddHours(21.1),  // 21:05
+            StandardPrice = 14.00m,
+            VipPrice = 22.00m,
+            Status = 0
+        }
+    );
+
     }
 }

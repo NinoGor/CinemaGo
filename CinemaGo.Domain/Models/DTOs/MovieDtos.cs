@@ -23,6 +23,11 @@ namespace CinemaGo.Domain.Models.DTOs
 
     public record PosterUrlRequest(string? PosterUrl);
 
+    public record GenreRequest(string Name);
+    public record HallCreateRequest(string Name, int Rows, int SeatsPerRow, int? FirstVipRow);
+    public record HallUpdateRequest(string Name);
+    public record SeatResponse(int Id, int RowNumber, int SeatNumber, bool IsVip);
+    public record SeatUpdateRequest(bool IsVip);
     public class MovieFilter : PaginationParams
     {
         public string? Title { get; set; }

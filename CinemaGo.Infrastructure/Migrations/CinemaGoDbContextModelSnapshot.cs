@@ -435,6 +435,96 @@ namespace CinemaGo.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_Sessions_Prices", "[StandardPrice] >= 0 AND [VipPrice] >= 0");
                         });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            EndsAt = new DateTime(2026, 11, 10, 16, 30, 0, 0, DateTimeKind.Utc),
+                            HallId = 1,
+                            MovieId = 1,
+                            StandardPrice = 15.00m,
+                            StartsAt = new DateTime(2026, 11, 10, 14, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            VipPrice = 25.00m
+                        },
+                        new
+                        {
+                            Id = 2,
+                            EndsAt = new DateTime(2026, 11, 10, 19, 36, 0, 0, DateTimeKind.Utc),
+                            HallId = 2,
+                            MovieId = 2,
+                            StandardPrice = 18.00m,
+                            StartsAt = new DateTime(2026, 11, 10, 17, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            VipPrice = 30.00m
+                        },
+                        new
+                        {
+                            Id = 3,
+                            EndsAt = new DateTime(2026, 11, 10, 22, 51, 0, 0, DateTimeKind.Utc),
+                            HallId = 1,
+                            MovieId = 4,
+                            StandardPrice = 20.00m,
+                            StartsAt = new DateTime(2026, 11, 10, 20, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            VipPrice = 35.00m
+                        },
+                        new
+                        {
+                            Id = 4,
+                            EndsAt = new DateTime(2026, 11, 11, 14, 5, 59, 999, DateTimeKind.Utc).AddTicks(9999),
+                            HallId = 2,
+                            MovieId = 3,
+                            StandardPrice = 12.00m,
+                            StartsAt = new DateTime(2026, 11, 11, 12, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            VipPrice = 20.00m
+                        },
+                        new
+                        {
+                            Id = 5,
+                            EndsAt = new DateTime(2026, 11, 11, 17, 30, 0, 0, DateTimeKind.Utc),
+                            HallId = 2,
+                            MovieId = 1,
+                            StandardPrice = 15.00m,
+                            StartsAt = new DateTime(2026, 11, 11, 15, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            VipPrice = 25.00m
+                        },
+                        new
+                        {
+                            Id = 6,
+                            EndsAt = new DateTime(2026, 11, 11, 20, 36, 0, 0, DateTimeKind.Utc),
+                            HallId = 1,
+                            MovieId = 2,
+                            StandardPrice = 18.00m,
+                            StartsAt = new DateTime(2026, 11, 11, 18, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            VipPrice = 30.00m
+                        },
+                        new
+                        {
+                            Id = 7,
+                            EndsAt = new DateTime(2026, 11, 12, 18, 51, 0, 0, DateTimeKind.Utc),
+                            HallId = 1,
+                            MovieId = 4,
+                            StandardPrice = 20.00m,
+                            StartsAt = new DateTime(2026, 11, 12, 16, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            VipPrice = 35.00m
+                        },
+                        new
+                        {
+                            Id = 8,
+                            EndsAt = new DateTime(2026, 11, 12, 21, 6, 0, 0, DateTimeKind.Utc),
+                            HallId = 2,
+                            MovieId = 3,
+                            StandardPrice = 14.00m,
+                            StartsAt = new DateTime(2026, 11, 12, 19, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            VipPrice = 22.00m
+                        });
                 });
 
             modelBuilder.Entity("CinemaGo.Domain.Models.Entities.Seat", b =>

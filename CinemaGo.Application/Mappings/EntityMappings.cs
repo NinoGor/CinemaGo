@@ -18,7 +18,7 @@ namespace CinemaGo.Application.Mappings
     public static class EntityMappings
     {
         public static GenreResponse ToResponse(this Genre genre) => new(genre.Id, genre.Name);
-
+        public static SeatResponse ToResponse(this Seat seat) => new(seat.Id, seat.RowNumber, seat.SeatNumber, seat.IsVip);
         public static HallResponse ToResponse(this Hall hall) => new(hall.Id, hall.Name, hall.Seats.Count);
 
         public static MovieResponse ToResponse(this Movie movie) => new(

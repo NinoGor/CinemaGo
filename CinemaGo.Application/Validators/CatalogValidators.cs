@@ -53,6 +53,38 @@ namespace CinemaGo.Application.Validators
         }
     }
 
+    public class GenreRequestValidator : AbstractValidator<GenreRequest>
+    {
+        public GenreRequestValidator()
+        {
+            RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+        }
+    }
+
+    public class HallCreateRequestValidator : AbstractValidator<HallCreateRequest>
+    {
+        public HallCreateRequestValidator()
+        {
+            RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+            RuleFor(x => x.Rows).InclusiveBetween(1, 30);
+            RuleFor(x => x.SeatsPerRow).InclusiveBetween(1, 50);
+
+            RuleFor(x => x.FirstVipRow)
+                .InclusiveBetween(1, 30)
+                .Must((request, firstVipRow) => firstVipRow <= request.Rows)
+                .WithMessage("The first VIP row cannot be greater than the number of rows.")
+                .When(x => x.FirstVipRow.HasValue);
+        }
+    }
+
+    public class HallUpdateRequestValidator : AbstractValidator<HallUpdateRequest>
+    {
+        public HallUpdateRequestValidator()
+        {
+            RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+        }
+    }
+
     public class PosterUrlRequestValidator : AbstractValidator<PosterUrlRequest>
     {
         public PosterUrlRequestValidator()

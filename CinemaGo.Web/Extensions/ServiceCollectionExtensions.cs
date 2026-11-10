@@ -38,7 +38,8 @@ public static class ServiceCollectionExtensions
         // Application services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IMovieService, MovieService>();
-        services.AddScoped<ILookupService, LookupService>();
+        services.AddScoped<IGenreService, GenreService>();
+        services.AddScoped<IHallService, HallService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<ITicketService, TicketService>();

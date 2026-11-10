@@ -31,7 +31,7 @@ namespace CinemaGo.Application.Validators
         public static void ApplyPagingRules<T>(this AbstractValidator<T> validator) where T : PaginationParams
         {
             validator.RuleFor(x => x.Page).GreaterThanOrEqualTo(1);
-            validator.RuleFor(x => x.PageSize).InclusiveBetween(1, 100);
+            validator.RuleFor(x => x.PageSize).InclusiveBetween(1, 200);
         }
     }
 }
