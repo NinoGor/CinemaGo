@@ -9,6 +9,7 @@ namespace CinemaGo.Domain.Models.DTOs
         string? Description,
         int DurationMinutes,
         int AgeRating,
+        string? PosterUrl,
         List<int> GenreIds);
 
     public record MovieResponse(
@@ -17,7 +18,10 @@ namespace CinemaGo.Domain.Models.DTOs
         string? Description,
         int DurationMinutes,
         int AgeRating,
+        string? PosterUrl,
         IReadOnlyList<GenreResponse> Genres);
+
+    public record PosterUrlRequest(string? PosterUrl);
 
     public class MovieFilter : PaginationParams
     {

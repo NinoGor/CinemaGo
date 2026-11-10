@@ -24,4 +24,8 @@
     <ProjectReference Include="..\CinemaGo.Infrastructure\CinemaGo.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\posters\" />
+  </ItemGroup>
+
 </Project>

@@ -8,7 +8,9 @@ namespace CinemaGo.Web.Controllers;
 
 public class MoviesController : BaseApiController
 {
+    private const long PosterRequestLimitBytes = 3 * 1024 * 1024;
     private readonly IMovieService _movies;
+
 
     public MoviesController(IMovieService movies) => _movies = movies;
 
@@ -43,4 +45,21 @@ public class MoviesController : BaseApiController
         await _movies.DeleteAsync(id, ct);
         return NoContent();
     }
+
+    [HttpPost("{id:int}/poster")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(3 * 1024 * 1024)]
+    public async Task<ActionResult<MovieResponse>> UploadPoster(int id, IFormFile file, CancellationToken ct)
+    {
+        await using var stream = file.OpenReadStream();
+        return Ok(await _movies.UploadPosterAsync(id, stream, ct));
+    }
+
+    [HttpPut("{id:int}/poster")]
+    public async Task<ActionResult<MovieResponse>> SetPoster(int id, [FromBody] PosterUrlRequest request, CancellationToken ct)
+        => Ok(await _movies.SetPosterAsync(id, request.PosterUrl, ct));
+
+    [HttpDelete("{id:int}/poster")]
+    public async Task<ActionResult<MovieResponse>> RemovePoster(int id, CancellationToken ct)
+        => Ok(await _movies.RemovePosterAsync(id, ct));
 }

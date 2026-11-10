@@ -10,5 +10,7 @@ namespace CinemaGo.Domain.Interfaces
         Task<PagedResult<Movie>> SearchAsync(MovieFilter filter, CancellationToken ct = default);
 
         Task<bool> HasSessionsAsync(int movieId, CancellationToken ct = default);
+
+        Task<bool> PosterUsedByOtherAsync(string posterUrl, int excludeMovieId, CancellationToken ct = default);
     }
 }

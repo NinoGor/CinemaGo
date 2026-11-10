@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CinemaGo.Infrastructure.Migrations
 {
     [DbContext(typeof(CinemaGoDbContext))]
-    [Migration("20261105131538_InitialCreate")]
+    [Migration("20261110070119_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -286,6 +286,10 @@ namespace CinemaGo.Infrastructure.Migrations
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
 
+                    b.Property<string>("PosterUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -309,6 +313,7 @@ namespace CinemaGo.Infrastructure.Migrations
                             AgeRating = 13,
                             Description = "A thief who steals secrets through dreams gets one last job.",
                             DurationMinutes = 148,
+                            PosterUrl = "/posters/inception.jpg",
                             Title = "Inception"
                         },
                         new
@@ -317,6 +322,7 @@ namespace CinemaGo.Infrastructure.Migrations
                             AgeRating = 13,
                             Description = "Batman faces the Joker in Gotham City.",
                             DurationMinutes = 152,
+                            PosterUrl = "/posters/the-dark-knight.jpg",
                             Title = "The Dark Knight"
                         },
                         new
@@ -325,6 +331,7 @@ namespace CinemaGo.Infrastructure.Migrations
                             AgeRating = 0,
                             Description = "A girl wanders into a world ruled by spirits.",
                             DurationMinutes = 125,
+                            PosterUrl = "/posters/spirited-away.jpg",
                             Title = "Spirited Away"
                         },
                         new
@@ -333,6 +340,7 @@ namespace CinemaGo.Infrastructure.Migrations
                             AgeRating = 12,
                             Description = "Explorers travel through a wormhole to save humanity.",
                             DurationMinutes = 169,
+                            PosterUrl = "/posters/interstellar.jpg",
                             Title = "Interstellar"
                         });
                 });

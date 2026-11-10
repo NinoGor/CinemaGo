@@ -59,6 +59,7 @@ public class CinemaGoDbContext : IdentityDbContext<ApplicationUser, ApplicationR
             });
             e.Property(m => m.Title).IsRequired().HasMaxLength(200);
             e.Property(m => m.Description).HasMaxLength(2000);
+            e.Property(m => m.PosterUrl).HasMaxLength(500);
             e.HasIndex(m => m.Title);
         });
 
@@ -223,10 +224,10 @@ public class CinemaGoDbContext : IdentityDbContext<ApplicationUser, ApplicationR
             new Genre { Id = 6, Name = "Thriller" });
 
         b.Entity<Movie>().HasData(
-            new Movie { Id = 1, Title = "Inception", Description = "A thief who steals secrets through dreams gets one last job.", DurationMinutes = 148, AgeRating = 13 },
-            new Movie { Id = 2, Title = "The Dark Knight", Description = "Batman faces the Joker in Gotham City.", DurationMinutes = 152, AgeRating = 13 },
-            new Movie { Id = 3, Title = "Spirited Away", Description = "A girl wanders into a world ruled by spirits.", DurationMinutes = 125, AgeRating = 0 },
-            new Movie { Id = 4, Title = "Interstellar", Description = "Explorers travel through a wormhole to save humanity.", DurationMinutes = 169, AgeRating = 12 });
+            new Movie { Id = 1, Title = "Inception", Description = "A thief who steals secrets through dreams gets one last job.", DurationMinutes = 148, AgeRating = 13, PosterUrl = "/posters/inception.jpg" },
+            new Movie { Id = 2, Title = "The Dark Knight", Description = "Batman faces the Joker in Gotham City.", DurationMinutes = 152, AgeRating = 13, PosterUrl = "/posters/the-dark-knight.jpg" },
+            new Movie { Id = 3, Title = "Spirited Away", Description = "A girl wanders into a world ruled by spirits.", DurationMinutes = 125, AgeRating = 0, PosterUrl = "/posters/spirited-away.jpg" },
+            new Movie { Id = 4, Title = "Interstellar", Description = "Explorers travel through a wormhole to save humanity.", DurationMinutes = 169, AgeRating = 12, PosterUrl = "/posters/interstellar.jpg" });
 
         b.Entity<MovieGenre>().HasData(
             new MovieGenre { MovieId = 1, GenreId = 1 }, new MovieGenre { MovieId = 1, GenreId = 2 },

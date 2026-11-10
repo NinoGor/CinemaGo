@@ -12,10 +12,28 @@ namespace CinemaGo.Application.Validators
             RuleFor(x => x.DurationMinutes).InclusiveBetween(1, 600);
             RuleFor(x => x.AgeRating).InclusiveBetween(0, 21);
 
+            RuleFor(x => x.PosterUrl)
+                .MaximumLength(500)
+                .Must(BeValidPosterUrl)
+                .WithMessage("PosterUrl must be an absolute http(s) URL or a path starting with '/'.")
+                .When(x => !string.IsNullOrWhiteSpace(x.PosterUrl));
+
             RuleFor(x => x.GenreIds)
                 .NotNull()
                 .NotEmpty().WithMessage("A movie needs at least one genre.");
             RuleForEach(x => x.GenreIds).GreaterThan(0);
+        }
+
+        // Only http(s) links or a site-relative path: blocks javascript:, data: and similar schemes.
+        internal static bool BeValidPosterUrl(string? url)
+        {
+            url = url!.Trim();
+
+            if (url.StartsWith('/') && !url.StartsWith("//"))
+                return true;
+
+            return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                   && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
         }
     }
 
@@ -32,6 +50,18 @@ namespace CinemaGo.Application.Validators
                 .WithMessage("SortBy must be 'title' or 'duration'.");
 
             RuleFor(x => x.MaxAgeRating).InclusiveBetween(0, 21).When(x => x.MaxAgeRating.HasValue);
+        }
+    }
+
+    public class PosterUrlRequestValidator : AbstractValidator<PosterUrlRequest>
+    {
+        public PosterUrlRequestValidator()
+        {
+            RuleFor(x => x.PosterUrl)
+                .MaximumLength(500)
+                .Must(MovieRequestValidator.BeValidPosterUrl)
+                .WithMessage("PosterUrl must be an absolute http(s) URL or a path starting with '/'.")
+                .When(x => !string.IsNullOrWhiteSpace(x.PosterUrl));
         }
     }
 }

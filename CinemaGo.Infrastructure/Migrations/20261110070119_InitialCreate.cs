@@ -48,7 +48,8 @@ namespace CinemaGo.Infrastructure.Migrations
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     DurationMinutes = table.Column<int>(type: "int", nullable: false),
-                    AgeRating = table.Column<int>(type: "int", nullable: false)
+                    AgeRating = table.Column<int>(type: "int", nullable: false),
+                    PosterUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -368,13 +369,13 @@ namespace CinemaGo.Infrastructure.Migrations
 
             migrationBuilder.InsertData(
                 table: "Movies",
-                columns: new[] { "Id", "AgeRating", "Description", "DurationMinutes", "Title" },
+                columns: new[] { "Id", "AgeRating", "Description", "DurationMinutes", "PosterUrl", "Title" },
                 values: new object[,]
                 {
-                    { 1, 13, "A thief who steals secrets through dreams gets one last job.", 148, "Inception" },
-                    { 2, 13, "Batman faces the Joker in Gotham City.", 152, "The Dark Knight" },
-                    { 3, 0, "A girl wanders into a world ruled by spirits.", 125, "Spirited Away" },
-                    { 4, 12, "Explorers travel through a wormhole to save humanity.", 169, "Interstellar" }
+                    { 1, 13, "A thief who steals secrets through dreams gets one last job.", 148, "/posters/inception.jpg", "Inception" },
+                    { 2, 13, "Batman faces the Joker in Gotham City.", 152, "/posters/the-dark-knight.jpg", "The Dark Knight" },
+                    { 3, 0, "A girl wanders into a world ruled by spirits.", 125, "/posters/spirited-away.jpg", "Spirited Away" },
+                    { 4, 12, "Explorers travel through a wormhole to save humanity.", 169, "/posters/interstellar.jpg", "Interstellar" }
                 });
 
             migrationBuilder.InsertData(

@@ -13,6 +13,7 @@ namespace CinemaGo.Domain.Models.DTOs
         int Id,
         int MovieId,
         string MovieTitle,
+        string? MoviePosterUrl,
         int HallId,
         string HallName,
         DateTime StartsAt,

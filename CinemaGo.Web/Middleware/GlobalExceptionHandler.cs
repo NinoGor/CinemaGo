@@ -28,6 +28,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden"),
             UnauthorizedException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             BusinessRuleException => (StatusCodes.Status422UnprocessableEntity, "Business rule violation"),
+            BadHttpRequestException bad => (bad.StatusCode, bad.StatusCode == StatusCodes.Status413PayloadTooLarge ? "Payload too large" : "Bad request"),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
         };
 

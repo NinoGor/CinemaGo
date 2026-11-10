@@ -6,6 +6,7 @@ namespace CinemaGo.Domain.Models.Entities
         public string? Description { get; set; }
         public int DurationMinutes { get; set; }
         public int AgeRating { get; set; }
+        public string? PosterUrl { get; set; }
 
         public ICollection<MovieGenre> MovieGenres { get; set; } = [];
         public ICollection<MovieSession> Sessions { get; set; } = [];

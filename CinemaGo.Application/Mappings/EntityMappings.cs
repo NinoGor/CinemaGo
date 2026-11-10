@@ -27,12 +27,14 @@ namespace CinemaGo.Application.Mappings
             movie.Description,
             movie.DurationMinutes,
             movie.AgeRating,
+            movie.PosterUrl,
             movie.MovieGenres.Select(mg => mg.Genre.ToResponse()).OrderBy(g => g.Name).ToList());
 
         public static SessionResponse ToResponse(this MovieSession session) => new(
             session.Id,
             session.MovieId,
             session.Movie.Title,
+            session.Movie.PosterUrl,
             session.HallId,
             session.Hall.Name,
             session.StartsAt.AsUtc(),
@@ -45,6 +47,7 @@ namespace CinemaGo.Application.Mappings
             booking.Id,
             booking.SessionId,
             booking.Session.Movie.Title,
+            booking.Session.Movie.PosterUrl,
             booking.Session.Hall.Name,
             booking.Session.StartsAt.AsUtc(),
             booking.SeatId,

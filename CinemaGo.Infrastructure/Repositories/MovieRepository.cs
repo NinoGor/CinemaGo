@@ -44,6 +44,9 @@ namespace CinemaGo.Infrastructure.Repositories
             return await query.ToPagedResultAsync(filter, ct);
         }
 
+        public Task<bool> PosterUsedByOtherAsync(string posterUrl, int excludeMovieId, CancellationToken ct = default)
+            => DbSet.AnyAsync(m => m.PosterUrl == posterUrl && m.Id != excludeMovieId, ct);
+
         public Task<bool> HasSessionsAsync(int movieId, CancellationToken ct = default)
             => Context.Sessions.AnyAsync(s => s.MovieId == movieId, ct);
     }

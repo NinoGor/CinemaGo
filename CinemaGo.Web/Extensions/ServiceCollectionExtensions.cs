@@ -17,6 +17,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ITransactionManager, TransactionManager>();
 
+        // ატვირთული პოსტერები არის ფაილები wwwroot/posters საქაღალდეში, served by UseStaticFiles.
+        // stateless-ია
+        services.AddSingleton<IPosterStorage>(sp =>
+        {
+            var env = sp.GetRequiredService<IWebHostEnvironment>();
+            var webRoot = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
+            return new LocalPosterStorage(Path.Combine(webRoot, "posters"));
+        });
+
         // Repositories
         services.AddScoped<IMovieRepository, MovieRepository>();
         services.AddScoped<IGenreRepository, GenreRepository>();
