@@ -1,1 +1,32 @@
 .admin-shell{display:grid;grid-template-columns:245px 1fr;min-height:calc(100vh - 78px)}.admin-side{background:#15151b;border-right:1px solid var(--line);padding:25px 16px}.admin-side h3{padding:0 12px;margin:12px 0 20px}.admin-side a{display:flex;gap:12px;padding:11px 13px;border-radius:10px;color:var(--muted);margin:4px 0}.admin-side a:hover,.admin-side a.active{background:var(--accent-soft);color:#fff}.admin-main{padding:38px;min-width:0}.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:25px 0}.metric{padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:16px}.metric span{font-size:.8rem;color:var(--muted)}.metric strong{display:block;font:700 1.8rem var(--display);margin-top:8px}.admin-content{margin-top:24px}.chart-panel{padding:22px;background:var(--surface);border:1px solid var(--line);border-radius:16px;min-height:300px}.chart-panel canvas{max-height:280px}.detail-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:25px}.session-list{display:grid;gap:12px}.session-card{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px;background:var(--surface);border:1px solid var(--line);border-radius:14px}.session-card .session-date{font:600 1rem var(--display)}.checkline{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:.85rem}.checkline input{accent-color:var(--accent)}.multi-select{min-height:110px}.notice{padding:13px 15px;background:var(--accent-soft);border:1px solid #e7475840;border-radius:12px;color:#ffd0d4;font-size:.88rem}.inline-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.admin-top{display:flex;align-items:center;justify-content:space-between;gap:20px}.filter-row{display:flex;gap:10px;flex-wrap:wrap}.filter-row .field{min-width:160px;flex:1}
+
+/* API poster fields and admin catalogue enhancements */
+.poster-media{position:relative;width:100%;height:100%;min-height:0;overflow:hidden;background:linear-gradient(145deg,#342b36,#17171d)}
+.poster-media img{display:block;width:100%;height:100%;object-fit:cover}
+.poster-fallback[hidden]{display:none!important}
+.poster-media .poster-fallback{position:absolute;inset:0}
+.session-summary{display:flex;align-items:center;gap:15px;min-width:0}
+.session-thumb{width:66px;height:88px;flex:0 0 66px;overflow:hidden;border-radius:9px;border:1px solid var(--line)}
+.session-thumb .poster-fallback span{font-size:1.5rem}
+.session-thumb .poster-fallback small{font-size:.65rem}
+.booking-movie{display:flex;align-items:center;gap:12px;min-width:250px}
+.booking-thumb{width:48px;height:66px;flex:0 0 48px;overflow:hidden;border-radius:7px;border:1px solid var(--line)}
+.booking-thumb .poster-fallback span{font-size:1.1rem}
+.booking-thumb .poster-fallback small{display:none}
+.booking-detail-movie{margin-bottom:16px}
+.booking-detail-movie .booking-thumb{width:86px;height:120px;flex-basis:86px}
+.admin-poster{width:48px;height:66px;overflow:hidden;border-radius:7px;border:1px solid var(--line)}
+.admin-poster .poster-fallback span{font-size:1.1rem}
+.admin-poster .poster-fallback small{display:none}
+.poster-manager-preview{display:flex;align-items:center;gap:18px;padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;margin-bottom:20px}
+.poster-manager-art{height:145px;width:98px;flex:0 0 98px;overflow:hidden;border-radius:9px}
+.poster-manager-preview p{overflow-wrap:anywhere;font-size:.82rem}
+.dialog.wide{max-width:min(920px,calc(100% - 28px))}
+.hall-screen{width:min(620px,90%);margin:4px auto 24px;text-align:center;padding:10px;border-radius:50% 50% 10px 10px;border-top:3px solid #a8a4ae;background:linear-gradient(180deg,#ffffff20,#ffffff00);letter-spacing:.25em;color:var(--muted);font-size:.75rem}
+.hall-seat-grid{display:grid;gap:9px;justify-content:center;overflow:auto;padding:10px 2px}
+.hall-seat-row{display:flex;align-items:center;gap:6px;justify-content:center}
+.hall-seat{width:34px;height:31px;padding:0;border:1px solid #55515d;border-radius:8px 8px 5px 5px;background:#292832;color:#ddd;font-size:.7rem}
+.hall-seat.vip{background:#6a4828;border-color:#d6a35e;color:#ffe0ae}
+.hall-seat:disabled{opacity:.55;cursor:wait}
+
+.soft-divider{border:0;border-top:1px solid var(--line);margin:22px 0}

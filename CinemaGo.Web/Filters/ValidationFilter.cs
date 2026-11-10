@@ -45,13 +45,19 @@ public class ValidationFilter : IAsyncActionFilter
                 .GroupBy(f => f.PropertyName)
                 .ToDictionary(g => g.Key, g => g.Select(f => f.ErrorMessage).Distinct().ToArray());
 
-            // აჩერებს მოთხოვნის შემდგომ შესრულებას და აბრუნებს 400 Bad Request პასუხს შეცდომების დეტალებით
-            context.Result = new BadRequestObjectResult(new ValidationProblemDetails(errors)
+            var traceId = context.HttpContext.TraceIdentifier;
+
+            // Standardized response matching your middleware format
+            var response = new
             {
-                Status = StatusCodes.Status400BadRequest,
-                Title = "One or more validation errors occurred.",
-                Instance = context.HttpContext.Request.Path
-            });
+                success = false,
+                message = "One or more validation errors occurred.",
+                status = StatusCodes.Status400BadRequest,
+                errors = errors,
+                traceId = traceId
+            };
+
+            context.Result = new BadRequestObjectResult(response);
             return;
         }
 

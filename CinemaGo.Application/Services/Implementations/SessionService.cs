@@ -1,4 +1,3 @@
-using System.Data;
 using CinemaGo.Application.Mappings;
 using CinemaGo.Application.Services.Interfaces;
 using CinemaGo.Domain.Exceptions;
@@ -7,6 +6,8 @@ using CinemaGo.Domain.Models.DTOs;
 using CinemaGo.Domain.Models.Entities;
 using CinemaGo.Domain.Models.Entities.Enums;
 using Microsoft.Extensions.Logging;
+using System.Data;
+using System.Net;
 
 namespace CinemaGo.Application.Services.Implementations
 {
@@ -230,12 +231,51 @@ namespace CinemaGo.Application.Services.Implementations
 
                 try
                 {
+                    var ticketCode = booking.Ticket?.TicketCode ?? "N/A";
+
+                    var body = $$"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
+                        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+                        .header { background: #e50914; color: #ffffff; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; }
+                        .content { padding: 30px; color: #333333; line-height: 1.6; }
+                        .ticket-card { background: #f9f9fb; border-left: 4px solid #e50914; padding: 15px; margin: 20px 0; border-radius: 4px; }
+                        .footer { background: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #777777; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">CinemaGo</div>
+                        <div class="content">
+                            <p>Hello <strong>{{WebUtility.HtmlEncode(booking.User.UserName)}}</strong>,</p>
+                            <p>We regret to inform you that the screening session has been cancelled.</p>
+                            
+                            <div class="ticket-card">
+                                <p style="margin: 0 0 8px 0;"><strong>Movie:</strong> {{WebUtility.HtmlEncode(session.Movie.Title)}}</p>
+                                <p style="margin: 0 0 8px 0;"><strong>Date & Time:</strong> {{session.StartsAt:yyyy-MM-dd HH:mm}} UTC</p>
+                                <p style="margin: 0 0 8px 0;"><strong>Seat:</strong> Row {{booking.Seat.RowNumber}}, Seat {{booking.Seat.SeatNumber}}</p>
+                                <p style="margin: 0;"><strong>Ticket Code:</strong> {{WebUtility.HtmlEncode(ticketCode)}}</p>
+                            </div>
+
+                            <p>Your booking and associated ticket are now cancelled. If you paid online, your refund will be processed shortly.</p>
+                            <p>We apologize for any inconvenience and hope to see you again soon!</p>
+                        </div>
+                        <div class="footer">
+                            &copy; {{DateTime.UtcNow.Year}} CinemaGo. All rights reserved.
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """;
+
                     await _email.SendAsync(
-                        booking.User!.Email!,
+                        booking.User.Email,
                         "Your CinemaGo session was cancelled",
-                        $"Hello {booking.User.UserName}, the session of '{session.Movie.Title}' on {session.StartsAt:yyyy-MM-dd HH:mm} UTC " +
-                        $"was cancelled. Your booking for row {booking.Seat.RowNumber}, seat {booking.Seat.SeatNumber} " +
-                        $"(ticket {booking.Ticket?.TicketCode}) is cancelled as well.",
+                        body,
                         ct);
                 }
                 catch (Exception ex)

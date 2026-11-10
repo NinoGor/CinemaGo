@@ -150,8 +150,9 @@ namespace CinemaGo.Application.Services.Implementations
             try
             {
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var link = $"{_emailSettings.PublicBaseUrl.TrimEnd('/')}/api/auth/confirm-email" +
-                           $"?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+                var link = $"{_emailSettings.PublicBaseUrl.TrimEnd('/')}/#/confirm-email" +
+                    $"?userId={Uri.EscapeDataString(user.Id.ToString())}" +
+                    $"&token={Uri.EscapeDataString(token)}";
 
                 // Notice the '$$' at the start: single {} are CSS, double {{}} are C# variables
                 var body = $$"""

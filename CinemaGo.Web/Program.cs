@@ -8,6 +8,7 @@ using CinemaGo.Web.Middleware;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -81,11 +82,39 @@ builder.Services.AddAuthorization();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
 builder.Services
-    .AddControllers(options => options.Filters.Add<ValidationFilter>())
-    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddControllers(options =>
+    {
+        options.Filters.Add<ValidationFilter>();
+    })
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        // This customizes how invalid model state / validation errors are returned
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            // Extract the field-level errors
+            var errors = context.ModelState
+                .Where(e => e.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
 
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails();
+            var traceId = context.HttpContext.TraceIdentifier;
+
+            // სტანდარტული რესპონსი
+            var response = new
+            {
+                success = false,
+                message = "One or more validation errors occurred.",
+                status = StatusCodes.Status400BadRequest,
+                errors = errors,
+                traceId = traceId
+            };
+
+            return new BadRequestObjectResult(response);
+        };
+    })
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // ---------------------------------------------------------------- Dependency injection (AddScoped...)
 builder.Services.AddCinemaGoServices(configuration);
@@ -118,8 +147,7 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // ---------------------------------------------------------------- Pipeline
-app.UseExceptionHandler();   // -> GlobalExceptionHandler -> ProblemDetails
-app.UseStatusCodePages();    // 401 / 403 / 404 without a body also become ProblemDetails
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -129,10 +157,21 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapGet("/", () =>
+{
+    var indexPath = Path.Combine(
+        app.Environment.WebRootPath!,
+        "index.html"
+    );
+
+    return Results.File(indexPath, "text/html");
+});
 
 app.Run();
